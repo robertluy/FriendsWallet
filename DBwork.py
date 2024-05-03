@@ -22,7 +22,7 @@ def add_user(tg_tag, tg_id=' ', wallet=' '):  # добавление польз�
         db_sess.commit()
 
 
-def add_friend(date_d, us_id_to, us_id, debt, status):  # добавление друга-должника
+def add_friend(date_d, us_id_to, us_id, debt, status='no'):  # добавление друга-должника
     deb = Debts()
     deb.date_d = date_d
     deb.us_id_to = us_id_to
@@ -34,7 +34,7 @@ def add_friend(date_d, us_id_to, us_id, debt, status):  # добавление �
     db_sess.commit()
 
 
-def upgrade_status_of_this_user(date_d, us_id_to, us_id, new_status):  # обновление статуса должника
+def upgrade_status_of_this_user(date_d, us_id_to, us_id, new_status='yes'):  # обновление статуса должника
     db_sess = db_session.create_session()
     debt = db_sess.query(Debts).filter(Debts.date_d == date_d, Debts.us_id_to == us_id_to, Debts.us_id == us_id).first()
     if debt:
@@ -46,18 +46,28 @@ def upgrade_status_of_this_user(date_d, us_id_to, us_id, new_status):  # обн�
 
 def get_unpaid_users(date_d, us_id_to):  # получение списка пользователей должников кортежом (tg_tag, долг)
     db_sess = db_session.create_session()
-    unpaid_users = db_sess.query(User.tg_tag).join(Debts, Debts.us_id == User.us_id).filter(Debts.date_d == date_d,
-                                                                                            Debts.us_id_to == us_id_to,
-                                                                                            Debts.status == 'no').all()
-    return [(i.tg_tag, i.debt) for i in unpaid_users]
+    unpaid_users = db_sess.query(User.tg_tag, Debts.debt). \
+        join(Debts, Debts.us_id == User.us_id). \
+        filter(Debts.date_d == date_d,
+               Debts.us_id_to == us_id_to,
+               Debts.status == 'no').all()
+    sps = []
+    for i in unpaid_users:
+        sps.append(list(i))
+    return sps
 
 
-def get_paid_users(date_d, us_id_to):  # получение списка оплативших друзей в том же формате
+def get_paid_users(date_d, us_id_to):  # получение списка пользователей должников кортежом (tg_tag, долг)
     db_sess = db_session.create_session()
-    paid_users = db_sess.query(User).join(Debts, Debts.us_id == User.us_id).filter(Debts.date_d == date_d,
-                                                                                   Debts.us_id_to == us_id_to,
-                                                                                   Debts.status == 'yes').all()
-    return [(i.tg_tag, i.debt) for i in paid_users]
+    unpaid_users = db_sess.query(User.tg_tag, Debts.debt). \
+        join(Debts, Debts.us_id == User.us_id). \
+        filter(Debts.date_d == date_d,
+               Debts.us_id_to == us_id_to,
+               Debts.status == 'yes').all()
+    sps = []
+    for i in unpaid_users:
+        sps.append(list(i))
+    return sps
 
 
 def get_debt_of_this_user(date_d, us_id_to, us_id):  # получение долга этого пользователя
@@ -68,3 +78,48 @@ def get_debt_of_this_user(date_d, us_id_to, us_id):  # получение дол
         return unpaid.debt
     else:
         return None
+
+
+def get__tg_tag__from__us_id(us_id):
+    db_sess = db_session.create_session()
+    name = db_sess.query(User).filter(User.us_id == us_id).first()
+    if name:
+        return name.tg_tag
+    else:
+        return 'No one tg_tag'
+
+
+def get__us_id__from__tg_tag(tg_tag):
+    db_sess = db_session.create_session()
+    name = db_sess.query(User).filter(User.tg_tag == tg_tag).first()
+    if name:
+        return name.us_id
+    else:
+        return 'No one us_id'
+
+
+def get__us_id__from__tg_id(tg_id):
+    db_sess = db_session.create_session()
+    name = db_sess.query(User).filter(User.tg_id == tg_id).first()
+    if name:
+        return name.us_id
+    else:
+        return 'No one us_id'
+
+
+def get__tg_tag__from__tg_id(tg_id):
+    db_sess = db_session.create_session()
+    name = db_sess.query(User).filter(User.tg_id == tg_id).first()
+    if name:
+        return name.tg_tag
+    else:
+        return 'No one tg_tag'
+
+
+def get__us_id__wallet(us_id):
+    db_sess = db_session.create_session()
+    wall = db_sess.query(User).filter(User.us_id == us_id).first()
+    if wall:
+        return wall.wallet
+    else:
+        return 'No one us_id'
