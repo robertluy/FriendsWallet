@@ -1,41 +1,42 @@
-from flask import Flask, render_template
-from data import db_session
-import DBwork as dbw
+import asyncio
 from datetime import datetime
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'robl_secret_key'
-
-"""@app.route("/profile")
-def wallet__tg_tag:
-    pass"""
+from db_control import db_instance  # Убедитесь, что это правильный импорт для вашей конфигурации
+from db_wrk import AsyncCore as dbw
+from db_control import SqlAlchemyBase
 
 
-@app.route('/')
-def index():
-    date_d = datetime(2024, 3, 3)
-    us_id_to = 1
-    unpaid_users = dbw.get_unpaid_users(date_d, us_id_to)  # получаем список кортежей
-    paid_users = dbw.get_paid_users(date_d, us_id_to)  # тоже список кортежей , поз[0]=tg_tag, поз[1]=debt
-    return render_template('index.html', us_name=dbw.get__tg_tag__from__us_id(us_id_to),
-                           wallet=dbw.get__us_id__wallet(us_id_to), unpaid_users=unpaid_users, paid_users=paid_users)
+async def main():
+    await db_instance.init_db()
+    await dbw.create_tables()
 
+    # Добавление пользователей
+    await dbw.add_user('@RealRoberL', '410403', '3120432')
+    await dbw.add_user('@RobotDolbaeb', '21311', '21321103')
+    await dbw.add_user('@NikitaDolbaeb', '32311', '53321103')
 
-if __name__ == '__main__':
-    db_session.global_init("db/transactions.sqlite")
-    '''dbw.add_user('@RealRoberL', '410403', '3120432')
-    dbw.add_user('@RobotDolbaeb', '21311', '21321103')
-    dbw.add_user('@NikitaDolbaeb', '32311', '53321103')
     timem = datetime(2024, 3, 3)
-    dbw.add_friend(timem, 1, 2, 1000)
-    dbw.add_friend(timem, 1, 3, 1000)
-    dbw.upgrade_status_of_this_user(timem, 1, 2)
-    print('unpaid:', dbw.get_unpaid_users(timem, 1))
-    print('paid:', dbw.get_paid_users(timem, 1))
-    print('debt of him: ', dbw.get_debt_of_this_user(timem, 1, 2))
-    print(dbw.get__tg_tag__from__us_id(1))
-    print(dbw.get__us_id__from__tg_tag('@RealRoberL'))
-    print(dbw.get__tg_tag__from__tg_id('410403'))
-    print(dbw.get__us_id__from__tg_id('410403'))
-    print(dbw.get__us_id__wallet(1))'''
-    app.run(host="127.0.0.1", port=8080)
+    await dbw.add_debt(timem, 1, 2, 1000)
+    await dbw.add_debt(timem, 1, 3, 1000)
+    await dbw.update_debt_status(timem, 1, 2, 'yes')
+
+    unpaid = await dbw.get_unpaid_users(timem, 1)
+    paid = await dbw.get_paid_users(timem, 1)
+    debt_of_him = await dbw.get_debt_of_this_user(timem, 1, 2)
+    tg_tag = await dbw.get_tg_tag_from_us_id(1)
+    us_id_by_tag = await dbw.get_us_id_from_tg_tag('@RealRoberL')
+    tg_tag_by_tg_id = await dbw.get_tg_tag_from_tg_id('410403')
+    us_id_by_tg_id = await dbw.get_us_id_from_tg_id('410403')
+    wallet = await dbw.get_us_id_wallet(1)
+
+    print('unpaid:', unpaid)
+    print('paid:', paid)
+    print('debt of him:', debt_of_him)
+    print('tg_tag from us_id:', tg_tag)
+    print('us_id from tg_tag:', us_id_by_tag)
+    print('tg_tag from tg_id:', tg_tag_by_tg_id)
+    print('us_id from tg_id:', us_id_by_tg_id)
+    print('wallet:', wallet)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
